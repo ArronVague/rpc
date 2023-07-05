@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
+	"reflect"
 	"rpc"
+	"strings"
 	"sync"
-	"time"
 )
 
 func startServer(addr chan string) {
@@ -20,27 +20,43 @@ func startServer(addr chan string) {
 }
 
 func main() {
-	log.SetFlags(0)
-	addr := make(chan string)
-	go startServer(addr)
-	client, _ := rpc.Dial("tcp", <-addr)
-	defer func() {
-		_ = client.Close()
-	}()
-
-	time.Sleep(time.Second)
 	var wg sync.WaitGroup
-	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			args := fmt.Sprintf("rpc req %d", i)
-			var reply string
-			if err := client.Call("Foo.Sum", args, &reply); err != nil {
-				log.Fatal("call Foo.Sum error: ", err)
-			}
-			log.Println("reply: ", reply)
-		}(i)
+	typ := reflect.TypeOf(&wg)
+	for i := 0; i < typ.NumMethod(); i++ {
+		method := typ.Method(i)
+		argv := make([]string, 0, method.Type.NumIn())
+		returns := make([]string, 0, method.Type.NumOut())
+
+		for j := 1; j < method.Type.NumIn(); j++ {
+			argv = append(argv, method.Type.In(j).Name())
+		}
+		for j := 0; j < method.Type.NumOut(); j++ {
+			returns = append(returns, method.Type.Out(j).Name())
+		}
+		log.Printf("func (w *%s) %s(%s) %s",
+			typ.Elem().Name(), method.Name, strings.Join(argv, ","), strings.Join(returns, ","))
 	}
-	wg.Wait()
+	//log.SetFlags(0)
+	//addr := make(chan string)
+	//go startServer(addr)
+	//client, _ := rpc.Dial("tcp", <-addr)
+	//defer func() {
+	//	_ = client.Close()
+	//}()
+	//
+	//time.Sleep(time.Second)
+	//var wg sync.WaitGroup
+	//for i := 0; i < 5; i++ {
+	//	wg.Add(1)
+	//	go func(i int) {
+	//		defer wg.Done()
+	//		args := fmt.Sprintf("rpc req %d", i)
+	//		var reply string
+	//		if err := client.Call("Foo.Sum", args, &reply); err != nil {
+	//			log.Fatal("call Foo.Sum error: ", err)
+	//		}
+	//		log.Println("reply: ", reply)
+	//	}(i)
+	//}
+	//wg.Wait()
 }
