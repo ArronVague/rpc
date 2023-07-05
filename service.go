@@ -25,7 +25,7 @@ func (m *methodType) newArgv() reflect.Value {
 	if m.ArgType.Kind() == reflect.Ptr {
 		argv = reflect.New(m.ArgType.Elem())
 	} else {
-		argv = reflect.New(m.ReplyType).Elem()
+		argv = reflect.New(m.ArgType).Elem()
 	}
 	return argv
 }
