@@ -45,7 +45,7 @@ func (m *methodType) newReplyv() reflect.Value {
 type service struct {
 	name   string                 //映射的结构体名称
 	typ    reflect.Type           //结构体类型
-	rcvr   reflect.Type           //结构体本身，调用时需要作为第0个参数
+	rcvr   reflect.Value          //结构体本身，调用时需要作为第0个参数
 	method map[string]*methodType //存储结构体的方法
 }
 
