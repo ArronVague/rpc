@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,7 +9,9 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"rpc/codec"
+	"strings"
 	"sync"
 	"time"
 )
@@ -271,5 +274,40 @@ func dialTimeout(f newClientFunc, network, address string, opts ...*Option) (cli
 	//正常执行
 	case result := <-ch:
 		return result.client, result.err
+	}
+}
+
+// 通过HTTP创建一个客户端实例
+func NewHTTPClient(conn net.Conn, opt *Option) (*Client, error) {
+	_, _ = io.WriteString(conn, fmt.Sprintf("CONNECT %s HTTP/1.0\n\n", defaultRPCPath))
+
+	resp, err := http.ReadResponse(bufio.NewReader(conn), &http.Request{Method: "CONNECT"})
+	if err == nil && resp.Status == connected {
+		return NewClient(conn, opt)
+	}
+	if err == nil {
+		err = errors.New("unexpected HTTP response: " + resp.Status)
+	}
+	return nil, err
+}
+
+func DialHTTP(network, address string, opts ...*Option) (*Client, error) {
+	return dialTimeout(NewHTTPClient, network, address, opts...)
+}
+
+// 提供统一入口XDial简化调用
+func XDial(rpcAddr string, opts ...*Option) (*Client, error) {
+	//rpcAddr是一个表示rpc服务器的通用格式（protocol@addr）
+	parts := strings.Split(rpcAddr, "@")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("rpc client err: wrong format '%s', expect protocol@addr", rpcAddr)
+	}
+	protocol, addr := parts[0], parts[1]
+	switch protocol {
+	case "http":
+		return DialHTTP("tcp", addr, opts...)
+	default:
+		//tcp, unix or other transport protocol
+		return Dial(protocol, addr, opts...)
 	}
 }

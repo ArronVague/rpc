@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"net"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -65,4 +66,14 @@ func TestClient_Call(t *testing.T) {
 		err := client.Call(context.Background(), "Bar.Timeout", 1, &reply)
 		_assert(err != nil && strings.Contains(err.Error(), "handle timeout"), "expect a timeout error")
 	})
+}
+
+func TestXDial(t *testing.T) {
+	if runtime.GOOS == "linux" {
+		ch := make(chan struct{})
+		addr := "/tmp/rpc.sock"
+		go func() {
+
+		}()
+	}
 }
