@@ -295,7 +295,7 @@ func DialHTTP(network, address string, opts ...*Option) (*Client, error) {
 	return dialTimeout(NewHTTPClient, network, address, opts...)
 }
 
-// 提供统一入口XDial简化调用
+// XDial 提供统一入口XDial简化调用
 func XDial(rpcAddr string, opts ...*Option) (*Client, error) {
 	//rpcAddr是一个表示rpc服务器的通用格式（protocol@addr）
 	parts := strings.Split(rpcAddr, "@")
